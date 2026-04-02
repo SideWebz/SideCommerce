@@ -1,0 +1,75 @@
+body {
+  background-color: #f8f9fa;
+}
+
+.auth-card {
+  max-width: 460px;
+}
+
+.settings-section {
+  border: 1px solid #dee2e6;
+  border-radius: 0.75rem;
+  background: #fff;
+  padding: 1rem;
+}
+
+.account-icon {
+  width: 30px;
+  height: 30px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid currentColor;
+}
+
+.product-card-image-wrapper {
+  aspect-ratio: 1 / 1;
+}
+
+.product-card-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.linked-circles {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.linked-product-circle {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 1.5px solid #dee2e6;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #f8f9fa;
+  flex-shrink: 0;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.linked-product-circle:hover {
+  transform: scale(1.12);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.18);
+}
+
+.linked-product-circle img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.linked-product-circle--more {
+  background-color: #e9ecef;
+  color: #495057;
+  text-decoration: none;
+  cursor: pointer;
+}

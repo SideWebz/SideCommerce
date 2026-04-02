@@ -1,0 +1,124 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum ProductType {
+  SIMPLE
+  VARIABLE
+}
+
+model User {
+  id           String    @id @default(cuid())
+  name         String
+  email        String    @unique
+  phone        String    @unique
+  passwordHash String
+  createdAt    DateTime  @default(now())
+  sessions     Session[]
+  store        Store?
+}
+
+model Store {
+  id          String   @id @default(cuid())
+  name        String
+  description String
+  ibanNumber  String
+  domain      String
+  phone       String
+  address     String
+  country     String
+  vatNumber   String
+  currency    String   @default("EUR")
+  createdAt   DateTime @default(now())
+  userId      String   @unique
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Product {
+  id            String        @id @default(cuid())
+  name          String
+  brand         String
+  description   String
+  productType   ProductType   @default(SIMPLE)
+  price         Decimal?      @db.Decimal(10, 2)
+  stock         Int?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  variants      Variant[]
+  images        ProductImage[]
+  categories    ProductCategory[]
+  outgoingLinks ProductLink[] @relation("ProductLinksFrom")
+  incomingLinks ProductLink[] @relation("ProductLinksTo")
+}
+
+model Category {
+  id        String            @id @default(cuid())
+  name      String            @unique
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+  products  ProductCategory[]
+}
+
+model ProductCategory {
+  id         String   @id @default(cuid())
+  productId  String
+  categoryId String
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@index([productId])
+  @@index([categoryId])
+  @@unique([productId, categoryId])
+}
+
+model Variant {
+  id        String   @id @default(cuid())
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  name      String
+  price     Decimal  @db.Decimal(10, 2)
+  stock     Int
+
+  @@index([productId])
+}
+
+model ProductImage {
+  id        String   @id @default(cuid())
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  filePath  String
+  sortOrder Int?
+
+  @@index([productId])
+  @@unique([productId, sortOrder])
+}
+
+model ProductLink {
+  id              String  @id @default(cuid())
+  productId       String
+  linkedProductId String
+  relationType    String
+  product         Product @relation("ProductLinksFrom", fields: [productId], references: [id], onDelete: Cascade)
+  linkedProduct   Product @relation("ProductLinksTo", fields: [linkedProductId], references: [id], onDelete: Cascade)
+
+  @@index([productId])
+  @@index([linkedProductId])
+  @@unique([productId, linkedProductId, relationType])
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([expiresAt])
+}
