@@ -203,7 +203,7 @@ export function StoreForm({ store }: { store: Store | null }) {
         <div className="col-12">
           <div className="settings-section">
             <h2 className="h6 text-secondary mb-1">Created</h2>
-            <p className="mb-0">{new Date(store.createdAt).toLocaleDateString()}</p>
+            <p className="mb-0">{new Date(store.createdAt).toLocaleDateString("en-GB")}</p>
           </div>
         </div>
 

@@ -24,7 +24,7 @@ model User {
 }
 
 model Store {
-  id          String   @id @default(cuid())
+  id          String    @id @default(cuid())
   name        String
   description String
   ibanNumber  String
@@ -33,14 +33,17 @@ model Store {
   address     String
   country     String
   vatNumber   String
-  currency    String   @default("EUR")
-  createdAt   DateTime @default(now())
-  userId      String   @unique
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  currency    String    @default("EUR")
+  createdAt   DateTime  @default(now())
+  userId      String    @unique
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  products    Product[]
 }
 
 model Product {
   id            String        @id @default(cuid())
+  storeId       String?
+  store         Store?        @relation(fields: [storeId], references: [id], onDelete: SetNull)
   name          String
   brand         String
   description   String
@@ -54,6 +57,8 @@ model Product {
   categories    ProductCategory[]
   outgoingLinks ProductLink[] @relation("ProductLinksFrom")
   incomingLinks ProductLink[] @relation("ProductLinksTo")
+
+  @@index([storeId])
 }
 
 model Category {

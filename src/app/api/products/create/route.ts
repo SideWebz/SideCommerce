@@ -90,8 +90,11 @@ export const POST = withDatabaseFallback(async function POST(request: NextReques
     }
 
     const product = await prisma.$transaction(async (tx) => {
+      const store = await tx.store.findUnique({ where: { userId: user.id }, select: { id: true } });
+
       const createdProduct = await tx.product.create({
         data: {
+          storeId: store?.id ?? null,
           name,
           brand,
           description,
