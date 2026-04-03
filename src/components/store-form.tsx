@@ -239,7 +239,7 @@ export function StoreForm({ store }: { store: Store | null }) {
                 <p className="text-secondary mb-2">Current favicon</p>
                 {store.faviconPath ? (
                   <img
-                    src={store.faviconPath}
+                    src={`/api/store/favicon/current?v=${encodeURIComponent(store.faviconPath)}`}
                     alt="Current store favicon"
                     width={48}
                     height={48}

@@ -47,9 +47,9 @@ export async function generateMetadata(): Promise<Metadata> {
     description: store.description,
     icons: storeFavicon
       ? {
-          icon: [{ url: storeFavicon }],
-          shortcut: storeFavicon,
-          apple: storeFavicon,
+          icon: [{ url: "/api/storefront/favicon" }],
+          shortcut: "/api/storefront/favicon",
+          apple: "/api/storefront/favicon",
         }
       : {
           icon: [{ url: ADMIN_FAVICON_PATH, type: "image/svg+xml" }],
