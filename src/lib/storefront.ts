@@ -74,6 +74,13 @@ export type StorefrontCategory = {
   name: string;
 };
 
+export type StorefrontShippingRegion = {
+  id: string;
+  country: string;
+  shippingCost: number;
+  freeShippingFrom: number | null;
+};
+
 export type StorefrontProductDetail = {
   id: string;
   name: string;
@@ -125,6 +132,24 @@ export async function getStorefrontCategories(storeId: string): Promise<Storefro
       orderBy: { name: "asc" },
     });
     return rows.map((c) => ({ id: c.id, name: c.name }));
+  } catch {
+    return [];
+  }
+}
+
+export async function getStorefrontShippingRegions(storeId: string): Promise<StorefrontShippingRegion[]> {
+  try {
+    const rows = await prisma.shippingRegion.findMany({
+      where: { storeId },
+      orderBy: { country: "asc" },
+    });
+
+    return rows.map((row) => ({
+      id: row.id,
+      country: row.country,
+      shippingCost: Number(row.shippingCost),
+      freeShippingFrom: row.freeShippingFrom === null ? null : Number(row.freeShippingFrom),
+    }));
   } catch {
     return [];
   }
@@ -182,3 +207,148 @@ export async function getStorefrontProduct(
   }
 }
 
+export type StorefrontOrder = {
+  id: string;
+  status: string;
+  trackingCode: string | null;
+  customerName: string;
+  customerEmail: string;
+  customerPhone: string;
+  customerAddress: string;
+  totalAmount: number;
+  createdAt: Date;
+  items: {
+    id: string;
+    productName: string;
+    variantName: string | null;
+    quantity: number;
+    unitPrice: number;
+    subtotal: number;
+  }[];
+};
+
+export type StorefrontCartAvailability = {
+  productId: string;
+  variantId: string | null;
+  availableStock: number;
+  itemLabel: string;
+};
+
+export async function getStorefrontCartAvailability(
+  storeId: string,
+  items: Array<{ productId: string; variantId: string | null }>,
+): Promise<StorefrontCartAvailability[]> {
+  if (items.length === 0) {
+    return [];
+  }
+
+  const productIds = [...new Set(items.map((item) => item.productId))];
+  const variantIds = [...new Set(items.flatMap((item) => (item.variantId ? [item.variantId] : [])))];
+
+  try {
+    const products = await prisma.product.findMany({
+      where: { id: { in: productIds }, storeId },
+      select: {
+        id: true,
+        name: true,
+        stock: true,
+      },
+    });
+
+    const variants = variantIds.length > 0
+      ? await prisma.variant.findMany({
+          where: {
+            id: { in: variantIds },
+            product: { storeId },
+          },
+          select: {
+            id: true,
+            name: true,
+            stock: true,
+            productId: true,
+            product: {
+              select: {
+                name: true,
+              },
+            },
+          },
+        })
+      : [];
+
+    const productsById = new Map(products.map((product) => [product.id, product]));
+    const variantsById = new Map(variants.map((variant) => [variant.id, variant]));
+
+    return items.map((item) => {
+      if (item.variantId) {
+        const variant = variantsById.get(item.variantId);
+        if (!variant) {
+          const productName = productsById.get(item.productId)?.name ?? "Item";
+          return {
+            productId: item.productId,
+            variantId: item.variantId,
+            availableStock: 0,
+            itemLabel: productName,
+          };
+        }
+
+        return {
+          productId: item.productId,
+          variantId: item.variantId,
+          availableStock: variant.stock,
+          itemLabel: `${variant.product.name} - ${variant.name}`,
+        };
+      }
+
+      const product = productsById.get(item.productId);
+      return {
+        productId: item.productId,
+        variantId: null,
+        availableStock: product?.stock ?? 0,
+        itemLabel: product?.name ?? "Item",
+      };
+    });
+  } catch {
+    return items.map((item) => ({
+      productId: item.productId,
+      variantId: item.variantId,
+      availableStock: 0,
+      itemLabel: "Item",
+    }));
+  }
+}
+
+export async function getStorefrontOrder(
+  storeId: string,
+  orderId: string,
+): Promise<StorefrontOrder | null> {
+  try {
+    const order = await prisma.order.findFirst({
+      where: { id: orderId, storeId },
+      include: { items: true },
+    });
+
+    if (!order) return null;
+
+    return {
+      id: order.id,
+      status: order.status,
+      trackingCode: order.trackingCode,
+      customerName: order.customerName,
+      customerEmail: order.customerEmail,
+      customerPhone: order.customerPhone,
+      customerAddress: order.customerAddress,
+      totalAmount: Number(order.totalAmount),
+      createdAt: order.createdAt,
+      items: order.items.map((i) => ({
+        id: i.id,
+        productName: i.productName,
+        variantName: i.variantName,
+        quantity: i.quantity,
+        unitPrice: Number(i.unitPrice),
+        subtotal: Number(i.subtotal),
+      })),
+    };
+  } catch {
+    return null;
+  }
+}

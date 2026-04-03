@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import type { StorefrontProductDetail } from "@/lib/storefront";
+import { useCart } from "@/lib/cart-context";
 
 const fmt = (v: number) =>
   new Intl.NumberFormat("en-US", { style: "currency", currency: "EUR" }).format(v);
@@ -12,13 +13,39 @@ type Props = {
 };
 
 export function StorefrontProductDetail({ product }: Props) {
+  const { addItem, items } = useCart();
   const [activeImage, setActiveImage] = useState(0);
   const [selectedVariantId, setSelectedVariantId] = useState<string>("");
+  const [addedFeedback, setAddedFeedback] = useState(false);
 
   const isVariable = product.productType === "VARIABLE";
   const selectedVariant = isVariable
     ? product.variants.find((v) => v.id === selectedVariantId) ?? null
     : null;
+
+  const quantityInCart = items.find((item) => {
+    if (isVariable) {
+      return item.productId === product.id && item.variantId === selectedVariantId;
+    }
+
+    return item.productId === product.id && item.variantId === null;
+  })?.quantity ?? 0;
+
+  function handleAddToBasket() {
+    const variant = isVariable
+      ? product.variants.find((v) => v.id === selectedVariantId) ?? null
+      : null;
+    addItem({
+      productId: product.id,
+      productName: product.name,
+      variantId: variant ? variant.id : null,
+      variantName: variant ? variant.name : null,
+      unitPrice: variant ? variant.price : (product.price ?? 0),
+      imagePath: product.images[0]?.filePath ?? null,
+    });
+    setAddedFeedback(true);
+    setTimeout(() => setAddedFeedback(false), 1500);
+  }
 
   const displayPrice = isVariable
     ? selectedVariant
@@ -39,10 +66,12 @@ export function StorefrontProductDetail({ product }: Props) {
       : product.variants.reduce((sum, v) => sum + v.stock, 0)
     : (product.stock ?? 0);
 
+  const remainingStock = Math.max(displayStock - quantityInCart, 0);
+
   const addToBasketDisabled =
     (isVariable && !selectedVariantId) ||
-    (isVariable && selectedVariant !== null && selectedVariant.stock === 0) ||
-    (!isVariable && displayStock === 0);
+    (isVariable && selectedVariant !== null && remainingStock === 0) ||
+    (!isVariable && remainingStock === 0);
 
   return (
     <div className="row g-4">
@@ -90,9 +119,9 @@ export function StorefrontProductDetail({ product }: Props) {
         <div className="h4 mb-0 fw-bold">{displayPrice}</div>
 
         <div>
-          {displayStock > 0 ? (
+          {remainingStock > 0 ? (
             <span className="badge bg-success-subtle text-success-emphasis fs-6 fw-normal">
-              In stock ({displayStock})
+              In stock ({remainingStock})
             </span>
           ) : (
             <span className="badge bg-secondary-subtle text-secondary-emphasis fs-6 fw-normal">
@@ -130,16 +159,19 @@ export function StorefrontProductDetail({ product }: Props) {
 
         <button
           type="button"
-          className="btn btn-dark btn-lg"
+          className={`btn btn-lg ${addedFeedback ? "btn-success" : "btn-dark"}`}
           disabled={addToBasketDisabled}
+          onClick={handleAddToBasket}
         >
-          {isVariable && product.variants.length === 0
-            ? "Unavailable"
-            : isVariable && !selectedVariantId
-              ? "Select an option"
-              : displayStock === 0
-                ? "Out of stock"
-                : "Add to basket"}
+          {addedFeedback
+            ? "Added to cart!"
+            : isVariable && product.variants.length === 0
+              ? "Unavailable"
+              : isVariable && !selectedVariantId
+                ? "Select an option"
+                : remainingStock === 0
+                  ? "Out of stock"
+                  : "Add to basket"}
         </button>
 
         {product.description && (

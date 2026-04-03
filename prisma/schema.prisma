@@ -12,6 +12,11 @@ enum ProductType {
   VARIABLE
 }
 
+enum EmailTemplateType {
+  ORDER_PLACED
+  ORDER_SHIPPED
+}
+
 model User {
   id           String    @id @default(cuid())
   name         String
@@ -38,6 +43,23 @@ model Store {
   userId      String    @unique
   user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   products    Product[]
+  orders      Order[]
+  emailTemplates EmailTemplate[]
+  shippingRegions ShippingRegion[]
+}
+
+model ShippingRegion {
+  id               String   @id @default(cuid())
+  storeId          String
+  store            Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  country          String
+  shippingCost     Decimal  @db.Decimal(10, 2)
+  freeShippingFrom Decimal? @db.Decimal(10, 2)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([storeId])
+  @@unique([storeId, country])
 }
 
 model Product {
@@ -57,6 +79,7 @@ model Product {
   categories    ProductCategory[]
   outgoingLinks ProductLink[] @relation("ProductLinksFrom")
   incomingLinks ProductLink[] @relation("ProductLinksTo")
+  orderItems    OrderItem[]
 
   @@index([storeId])
 }
@@ -82,12 +105,13 @@ model ProductCategory {
 }
 
 model Variant {
-  id        String   @id @default(cuid())
+  id        String      @id @default(cuid())
   productId String
-  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  product   Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
   name      String
-  price     Decimal  @db.Decimal(10, 2)
+  price     Decimal     @db.Decimal(10, 2)
   stock     Int
+  orderItems OrderItem[]
 
   @@index([productId])
 }
@@ -126,4 +150,56 @@ model Session {
 
   @@index([userId])
   @@index([expiresAt])
+}
+
+model Order {
+  id              String      @id @default(cuid())
+  storeId         String
+  store           Store       @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  status          String      @default("pending")
+  molliePaymentId String?
+  paymentStatus   String      @default("pending")
+  trackingCode    String?
+  archivedAt      DateTime?
+  customerName    String
+  customerEmail   String
+  customerPhone   String
+  customerAddress String
+  totalAmount     Decimal     @db.Decimal(10, 2)
+  createdAt       DateTime    @default(now())
+  items           OrderItem[]
+
+  @@index([storeId])
+  @@index([molliePaymentId])
+}
+
+model OrderItem {
+  id          String   @id @default(cuid())
+  orderId     String
+  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId   String
+  product     Product  @relation(fields: [productId], references: [id], onDelete: Restrict)
+  variantId   String?
+  variant     Variant? @relation(fields: [variantId], references: [id], onDelete: Restrict)
+  productName String
+  variantName String?
+  quantity    Int
+  unitPrice   Decimal  @db.Decimal(10, 2)
+  subtotal    Decimal  @db.Decimal(10, 2)
+
+  @@index([orderId])
+}
+
+model EmailTemplate {
+  id        String            @id @default(cuid())
+  storeId   String
+  store     Store             @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  type      EmailTemplateType
+  subject   String
+  body      String
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+
+  @@index([storeId])
+  @@unique([storeId, type])
 }

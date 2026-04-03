@@ -1,10 +1,11 @@
 import Link from "next/link";
 import { cookies, headers } from "next/headers";
-import { redirect } from "next/navigation";
 import { Navbar } from "@/components/navbar";
 import { StorefrontNavbar } from "@/components/storefront-navbar";
 import { StorefrontProductGrid } from "@/components/storefront-product-grid";
+import { OrdersListAdmin } from "@/components/orders-list-admin";
 import { getUserFromSessionToken, SESSION_COOKIE_NAME } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
 import {
   getStoreByDomain,
   getStorefrontProducts,
@@ -23,22 +24,46 @@ export default async function HomePage() {
     const user = await getUserFromSessionToken(sessionToken);
 
     if (!user) {
-      redirect("/login");
+      return (
+        <>
+          <Navbar active="orders" />
+          <main className="container py-5">
+            <div className="card border-0 shadow-sm">
+              <div className="card-body p-5 text-center">
+                <h1 className="h3 mb-2">Welcome to SideCommerce</h1>
+                <p className="text-secondary mb-4">Sign in to manage your orders and store settings.</p>
+                <div className="d-flex justify-content-center gap-2 flex-wrap">
+                  <Link href="/login" className="btn btn-dark">Sign in</Link>
+                  <Link href="/register" className="btn btn-outline-secondary">Create account</Link>
+                </div>
+              </div>
+            </div>
+          </main>
+        </>
+      );
     }
+
+    const store = await prisma.store.findUnique({ where: { userId: user.id } });
 
     return (
       <>
         <Navbar active="orders" />
         <main className="container py-5">
-          <div className="mb-4">
-            <h1 className="h3 mb-1">Orders</h1>
-            <p className="text-secondary mb-0">All placed orders will appear here.</p>
-          </div>
-          <div className="card border-0 shadow-sm">
-            <div className="card-body p-5 text-center text-secondary">
-              <p className="mb-0">No orders yet.</p>
-            </div>
-          </div>
+          {!store ? (
+            <>
+              <div className="mb-4">
+                <h1 className="h3 mb-1">Orders</h1>
+                <p className="text-secondary mb-0">Set up your store to receive orders.</p>
+              </div>
+              <div className="card border-0 shadow-sm">
+                <div className="card-body p-5 text-center text-secondary">
+                  <p className="mb-0">No store found.</p>
+                </div>
+              </div>
+            </>
+          ) : (
+            <OrdersListAdmin storeName={store.name} />
+          )}
         </main>
       </>
     );

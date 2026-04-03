@@ -10,12 +10,14 @@
     "db:deploy": "prisma migrate deploy"
   },
   "dependencies": {
+    "@mollie/api-client": "^4.5.0",
     "@prisma/client": "^6.15.0",
     "bcryptjs": "^3.0.3",
     "bootstrap": "^5.3.7",
     "next": "16.2.2",
     "react": "19.2.4",
-    "react-dom": "19.2.4"
+    "react-dom": "19.2.4",
+    "resend": "^6.10.0"
   },
   "devDependencies": {
     "@types/node": "^20",
