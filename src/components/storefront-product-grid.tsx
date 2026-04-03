@@ -62,7 +62,8 @@ export function StorefrontProductGrid({
 
   useEffect(() => {
     if (!isFilterOpen) {
-      document.body.style.removeProperty("overflow");
+      document.documentElement.classList.remove("scroll-locked");
+      document.body.classList.remove("scroll-locked");
       return;
     }
 
@@ -72,11 +73,14 @@ export function StorefrontProductGrid({
       }
     };
 
-    document.body.style.overflow = "hidden";
+    // Use class-based scroll lock instead of inline styles for better performance
+    document.documentElement.classList.add("scroll-locked");
+    document.body.classList.add("scroll-locked");
     window.addEventListener("keydown", onKeyDown);
 
     return () => {
-      document.body.style.removeProperty("overflow");
+      document.documentElement.classList.remove("scroll-locked");
+      document.body.classList.remove("scroll-locked");
       window.removeEventListener("keydown", onKeyDown);
     };
   }, [isFilterOpen]);
