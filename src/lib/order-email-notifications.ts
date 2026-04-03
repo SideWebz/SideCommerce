@@ -6,9 +6,10 @@ import {
   renderTemplate,
 } from "@/lib/email-templates";
 import { sendTransactionalEmail } from "@/lib/email-service";
+import { buildStoreBaseUrl, buildStoreSenderAddress } from "@/lib/env-config";
 
 function buildOrderLink(domain: string, orderId: string) {
-  const base = domain.includes("localhost") ? `http://${domain}` : `https://${domain}`;
+  const base = buildStoreBaseUrl(domain);
   return `${base}/order/${orderId}`;
 }
 
@@ -22,15 +23,7 @@ async function sendOrderEmail({
   const order = await prisma.order.findUnique({
     where: { id: orderId },
     include: {
-      store: {
-        include: {
-          user: {
-            select: {
-              email: true,
-            },
-          },
-        },
-      },
+      store: true,
     },
   });
 
@@ -65,7 +58,7 @@ async function sendOrderEmail({
     definition.requiredPlaceholders,
   );
 
-  const from = `${order.store.name} <${order.store.user.email}>`;
+  const from = buildStoreSenderAddress(order.store.name);
 
   return sendTransactionalEmail({
     to: order.customerEmail,

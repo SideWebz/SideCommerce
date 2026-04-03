@@ -8,6 +8,7 @@ import {
 } from "@/lib/storefront";
 import { sendOrderPlacedEmail } from "@/lib/order-email-notifications";
 import { getMollieClient } from "@/lib/mollie";
+import { getAppUrl } from "@/lib/env-config";
 
 type OrderItemInput = {
   productId: string;
@@ -259,7 +260,8 @@ export async function POST(req: Request) {
 
     // Create the Mollie payment after the order is safely stored
     const requestHeaders = await headers();
-    const host = requestHeaders.get("host") ?? "localhost:3000";
+    const configuredPort = (process.env.SITE_PORT ?? process.env.PORT ?? "3000").trim() || "3000";
+    const host = requestHeaders.get("host") ?? `localhost:${configuredPort}`;
     const hostname = host.split(":")[0] ?? "";
     // Local / dev TLDs — never force https
     const isLocalHost =
@@ -270,7 +272,7 @@ export async function POST(req: Request) {
       hostname.endsWith(".local") ||
       hostname.endsWith(".internal");
     const storeBaseUrl = `${isLocalHost ? "http" : "https"}://${host}`;
-    const appUrl = (process.env.APP_URL ?? "http://localhost:3000").replace(/\/$/, "");
+    const appUrl = getAppUrl();
 
     // Mollie rejects webhook URLs it cannot reach (e.g. localhost).
     // Only include the webhookUrl when APP_URL is a publicly accessible address.

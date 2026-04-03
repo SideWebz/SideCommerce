@@ -9,9 +9,10 @@ import {
   validateTemplateBody,
 } from "@/lib/email-templates";
 import { sendTransactionalEmail } from "@/lib/email-service";
+import { buildStoreBaseUrl, buildStoreSenderAddress } from "@/lib/env-config";
 
 function buildSampleOrderLink(domain: string) {
-  const base = domain.includes("localhost") ? `http://${domain}` : `https://${domain}`;
+  const base = buildStoreBaseUrl(domain);
   return `${base}/order/test-order-123`;
 }
 
@@ -81,7 +82,7 @@ export const POST = withDatabaseFallback(async function POST(request: NextReques
     templateDefinition.requiredPlaceholders,
   );
 
-  const sender = `${store.name} <${user.email}>`;
+  const sender = buildStoreSenderAddress(store.name);
   const sendResult = await sendTransactionalEmail({
     to: user.email,
     from: sender,
