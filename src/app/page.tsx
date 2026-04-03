@@ -8,10 +8,66 @@ import { getUserFromSessionToken, SESSION_COOKIE_NAME } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import {
   getStoreByDomain,
+  type StorefrontProductItem,
   getStorefrontProducts,
   isPlatformDomain,
   normalizeDomainFromHost,
 } from "@/lib/storefront";
+
+function formatPrice(prices: number[], productType: string, simplePrice: number | null) {
+  const fmt = (value: number) =>
+    new Intl.NumberFormat("en-US", { style: "currency", currency: "EUR" }).format(value);
+
+  if (productType === "VARIABLE" && prices.length > 0) {
+    const min = Math.min(...prices);
+    const max = Math.max(...prices);
+    return min === max ? fmt(min) : `${fmt(min)} - ${fmt(max)}`;
+  }
+
+  return fmt(simplePrice ?? 0);
+}
+
+function FeaturedProductRow({ title, products }: { title: string; products: StorefrontProductItem[] }) {
+  if (products.length === 0) {
+    return null;
+  }
+
+  return (
+    <section className="d-grid gap-3">
+      <div className="d-flex justify-content-between align-items-center">
+        <h2 className="h5 mb-0">{title}</h2>
+      </div>
+      <div className="storefront-featured-row">
+        {products.map((product) => (
+          <Link key={product.id} href={`/product/${product.id}`} className="text-decoration-none">
+            <article className="card border-0 shadow-sm storefront-featured-card">
+              <div className="product-card-image-wrapper border-bottom bg-light-subtle">
+                {product.imagePath ? (
+                  <img src={product.imagePath} alt={product.name} className="product-card-image" />
+                ) : (
+                  <div className="w-100 h-100 d-flex align-items-center justify-content-center text-secondary small">
+                    No image
+                  </div>
+                )}
+              </div>
+              <div className="card-body d-grid gap-1">
+                <h3 className="h6 mb-0 text-truncate text-dark" title={product.name}>
+                  {product.name}
+                </h3>
+                <div className="small text-secondary text-truncate" title={product.brand}>
+                  {product.brand}
+                </div>
+                <div className="fw-semibold text-dark">
+                  {formatPrice(product.variantPrices, product.productType, product.price)}
+                </div>
+              </div>
+            </article>
+          </Link>
+        ))}
+      </div>
+    </section>
+  );
+}
 
 export default async function HomePage() {
   const requestHeaders = await headers();
@@ -105,10 +161,22 @@ export default async function HomePage() {
     .map(([id, name]) => ({ id, name }))
     .sort((a, b) => a.name.localeCompare(b.name));
 
+  const newestProducts = [...products].sort(
+    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+  ).slice(0, 8);
+
+  const popularProducts = [...products]
+    .sort((a, b) => {
+      const stockA = a.productType === "VARIABLE" ? a.variantStockTotal : (a.stock ?? 0);
+      const stockB = b.productType === "VARIABLE" ? b.variantStockTotal : (b.stock ?? 0);
+      return stockB - stockA;
+    })
+    .slice(0, 8);
+
   return (
     <>
       <StorefrontNavbar storeName={store.name} />
-      <main className="container py-5">
+      <main className="container py-4 py-md-5 d-grid gap-4 gap-md-5">
         {products.length === 0 ? (
           <div className="card border-0 shadow-sm">
             <div className="card-body p-5 text-center text-secondary">
@@ -116,7 +184,70 @@ export default async function HomePage() {
             </div>
           </div>
         ) : (
-          <StorefrontProductGrid products={products} categories={categories} />
+          <>
+            <section className="card border-0 shadow-sm overflow-hidden">
+              <div className="card-body p-4 p-md-5">
+                <div className="row g-4 align-items-center">
+                  <div className="col-lg-7">
+                    <h1 className="display-6 fw-semibold mb-2">Discover products you will love</h1>
+                    <p className="text-secondary mb-3 mb-md-4">
+                      Shop by category, search by brand or product name, and use smart filters to find the perfect match.
+                    </p>
+                    <a href="#shop-all" className="btn btn-dark btn-lg">
+                      Start browsing
+                    </a>
+                  </div>
+                  <div className="col-lg-5">
+                    <div className="storefront-hero-metrics">
+                      <div className="storefront-hero-metric-card">
+                        <div className="small text-secondary">Products</div>
+                        <div className="h4 mb-0">{products.length}</div>
+                      </div>
+                      <div className="storefront-hero-metric-card">
+                        <div className="small text-secondary">Categories</div>
+                        <div className="h4 mb-0">{categories.length}</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            {categories.length > 0 && (
+              <section className="d-grid gap-3">
+                <div className="d-flex justify-content-between align-items-center">
+                  <h2 className="h5 mb-0">Shop by category</h2>
+                </div>
+                <div className="storefront-category-strip" role="list" aria-label="Product categories">
+                  {categories.map((category) => (
+                    <Link
+                      key={category.id}
+                      href={`/category/${category.id}`}
+                      className="storefront-category-chip"
+                      role="listitem"
+                    >
+                      {category.name}
+                    </Link>
+                  ))}
+                </div>
+              </section>
+            )}
+
+            <FeaturedProductRow title="Newest products" products={newestProducts} />
+
+            {popularProducts.length > 0 && (
+              <FeaturedProductRow title="Popular products" products={popularProducts} />
+            )}
+
+            <section id="shop-all" className="d-grid gap-3">
+              <StorefrontProductGrid
+                products={products}
+                categories={categories}
+                heading="Shop all products"
+                subheading="Use search and filters to narrow your results in seconds."
+              />
+            </section>
+          </>
         )}
       </main>
     </>

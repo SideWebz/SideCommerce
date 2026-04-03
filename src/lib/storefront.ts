@@ -59,6 +59,7 @@ export type StorefrontProductItem = {
   id: string;
   name: string;
   brand: string;
+  createdAt: string;
   productType: "SIMPLE" | "VARIABLE";
   price: number | null;
   stock: number | null;
@@ -111,6 +112,7 @@ export async function getStorefrontProducts(storeId: string): Promise<Storefront
       id: p.id,
       name: p.name,
       brand: p.brand,
+      createdAt: p.createdAt.toISOString(),
       productType: p.productType,
       price: p.price === null ? null : Number(p.price),
       stock: p.stock,
