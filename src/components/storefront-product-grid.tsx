@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { StorefrontProductItem, StorefrontCategory } from "@/lib/storefront";
 
 type SortOption = "newest" | "price-asc" | "price-desc" | "name-asc";
@@ -59,6 +59,27 @@ export function StorefrontProductGrid({
   const [minPrice, setMinPrice] = useState("");
   const [maxPrice, setMaxPrice] = useState("");
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+
+  useEffect(() => {
+    if (!isFilterOpen) {
+      document.body.style.removeProperty("overflow");
+      return;
+    }
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setIsFilterOpen(false);
+      }
+    };
+
+    document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", onKeyDown);
+
+    return () => {
+      document.body.style.removeProperty("overflow");
+      window.removeEventListener("keydown", onKeyDown);
+    };
+  }, [isFilterOpen]);
 
   const brands = useMemo(
     () => Array.from(new Set(products.map((product) => product.brand))).sort((a, b) => a.localeCompare(b)),
@@ -202,7 +223,7 @@ export function StorefrontProductGrid({
         </header>
       )}
 
-      <div className="card border-0 shadow-sm">
+      <div className="card border-0 shadow-sm storefront-products-shell">
         <div className="card-body p-3 p-md-4 d-grid gap-3">
           <div className="storefront-toolbar">
             <div className="position-relative flex-grow-1">
@@ -250,7 +271,7 @@ export function StorefrontProductGrid({
           </div>
 
           {activeFilterChips.length > 0 && (
-            <div className="d-flex flex-wrap gap-2 align-items-center">
+            <div className="d-flex gap-2 align-items-center storefront-active-filter-row">
               {activeFilterChips.map((chip) => (
                 <button
                   key={chip.id}
@@ -279,6 +300,7 @@ export function StorefrontProductGrid({
       <div className={`storefront-filter-backdrop ${isFilterOpen ? "is-open" : ""}`} onClick={() => setIsFilterOpen(false)} />
 
       <aside className={`storefront-filter-panel ${isFilterOpen ? "is-open" : ""}`} aria-label="Filters">
+        <div className="storefront-filter-handle" aria-hidden="true" />
         <div className="d-flex justify-content-between align-items-center mb-3">
           <h3 className="h5 mb-0">Filters</h3>
           <button type="button" className="btn btn-sm btn-outline-secondary" onClick={() => setIsFilterOpen(false)}>
@@ -380,8 +402,12 @@ export function StorefrontProductGrid({
 
       {filteredProducts.length === 0 ? (
         <div className="card border-0 shadow-sm">
-          <div className="card-body p-5 text-center text-secondary">
-            No products match the current filters.
+          <div className="card-body p-5 text-center">
+            <h3 className="h5 mb-2">No matching products</h3>
+            <p className="text-secondary mb-3">Try changing search, brand, category, or price filters.</p>
+            <button type="button" className="btn btn-outline-dark" onClick={clearAllFilters}>
+              Reset filters
+            </button>
           </div>
         </div>
       ) : (

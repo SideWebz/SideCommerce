@@ -17,16 +17,19 @@ export function StorefrontNavbar({ storeName }: StorefrontNavbarProps) {
   const count = mounted ? totalQuantity : 0;
 
   return (
-    <nav className="navbar navbar-expand-md bg-white border-bottom sticky-top">
-      <div className="container">
-        <Link href="/" className="navbar-brand fw-bold text-dark text-decoration-none">
+    <nav className="navbar bg-white border-bottom sticky-top storefront-navbar">
+      <div className="container py-2">
+        <Link href="/" className="navbar-brand fw-bold text-dark text-decoration-none mb-0 text-truncate me-2">
           {storeName}
         </Link>
 
-        <div className="d-flex align-items-center gap-3">
+        <div className="d-flex align-items-center gap-2 ms-auto">
+          <Link href="/#shop-all" className="btn btn-light btn-sm border d-none d-sm-inline-flex">
+            Shop
+          </Link>
           <Link
             href="/cart"
-            className="btn btn-outline-secondary btn-sm d-flex align-items-center gap-1 position-relative"
+            className="btn btn-outline-dark btn-sm d-flex align-items-center gap-1 position-relative"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"

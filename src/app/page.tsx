@@ -33,7 +33,7 @@ function FeaturedProductRow({ title, products }: { title: string; products: Stor
   }
 
   return (
-    <section className="d-grid gap-3">
+    <section className="d-grid gap-3 storefront-reveal">
       <div className="d-flex justify-content-between align-items-center">
         <h2 className="h5 mb-0">{title}</h2>
       </div>
@@ -176,7 +176,7 @@ export default async function HomePage() {
   return (
     <>
       <StorefrontNavbar storeName={store.name} />
-      <main className="container py-4 py-md-5 d-grid gap-4 gap-md-5">
+      <main className="container py-4 py-md-5 d-grid gap-4 gap-md-5 storefront-main-shell">
         {products.length === 0 ? (
           <div className="card border-0 shadow-sm">
             <div className="card-body p-5 text-center text-secondary">
@@ -185,10 +185,11 @@ export default async function HomePage() {
           </div>
         ) : (
           <>
-            <section className="card border-0 shadow-sm overflow-hidden">
+            <section className="card border-0 shadow-sm overflow-hidden storefront-hero-card storefront-reveal">
               <div className="card-body p-4 p-md-5">
                 <div className="row g-4 align-items-center">
                   <div className="col-lg-7">
+                    <span className="badge rounded-pill text-bg-light border mb-3">New season selection</span>
                     <h1 className="display-6 fw-semibold mb-2">Discover products you will love</h1>
                     <p className="text-secondary mb-3 mb-md-4">
                       Shop by category, search by brand or product name, and use smart filters to find the perfect match.
@@ -214,7 +215,7 @@ export default async function HomePage() {
             </section>
 
             {categories.length > 0 && (
-              <section className="d-grid gap-3">
+              <section className="d-grid gap-3 storefront-reveal">
                 <div className="d-flex justify-content-between align-items-center">
                   <h2 className="h5 mb-0">Shop by category</h2>
                 </div>
@@ -239,7 +240,7 @@ export default async function HomePage() {
               <FeaturedProductRow title="Popular products" products={popularProducts} />
             )}
 
-            <section id="shop-all" className="d-grid gap-3">
+            <section id="shop-all" className="d-grid gap-3 storefront-reveal">
               <StorefrontProductGrid
                 products={products}
                 categories={categories}
