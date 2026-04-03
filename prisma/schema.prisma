@@ -32,6 +32,7 @@ model Store {
   id          String    @id @default(cuid())
   name        String
   description String
+  faviconPath String?
   ibanNumber  String
   domain      String
   phone       String

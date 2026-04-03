@@ -7,6 +7,7 @@ export type Store = {
   id: string;
   name: string;
   description: string;
+  faviconPath: string | null;
   ibanNumber: string;
   domain: string;
   phone: string;
@@ -24,6 +25,7 @@ const CURRENCIES = ["EUR", "USD", "GBP", "CHF", "CAD", "AUD", "JPY", "DKK", "SEK
 export function StoreForm({ store }: { store: Store | null }) {
   const router = useRouter();
   const [flash, setFlash] = useState<Flash | null>(null);
+  const [isUploadingFavicon, setIsUploadingFavicon] = useState(false);
 
   async function submitForm(event: FormEvent<HTMLFormElement>, endpoint: string) {
     event.preventDefault();
@@ -54,6 +56,35 @@ export function StoreForm({ store }: { store: Store | null }) {
       return;
     }
     setFlash({ kind: "success", message: data.message ?? "Store deleted" });
+    router.refresh();
+  }
+
+  async function handleFaviconUpload(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    const form = event.currentTarget;
+    const fileInput = form.elements.namedItem("favicon") as HTMLInputElement | null;
+    if (!fileInput?.files?.[0]) {
+      setFlash({ kind: "error", message: "Please select an image file first" });
+      return;
+    }
+
+    setIsUploadingFavicon(true);
+    const response = await fetch("/api/store/favicon/upload", {
+      method: "POST",
+      body: new FormData(form),
+      credentials: "include",
+    });
+    const data = await response.json().catch(() => ({}));
+    setIsUploadingFavicon(false);
+
+    if (!response.ok) {
+      setFlash({ kind: "error", message: data.message ?? "Favicon upload failed" });
+      return;
+    }
+
+    setFlash({ kind: "success", message: data.message ?? "Favicon updated" });
+    form.reset();
     router.refresh();
   }
 
@@ -197,6 +228,47 @@ export function StoreForm({ store }: { store: Store | null }) {
               <input type="hidden" name="country" value={store.country} />
             </div>
             <button className="btn btn-dark mt-3" type="submit">Save financial</button>
+          </form>
+        </div>
+
+        <div className="col-12">
+          <form onSubmit={handleFaviconUpload} className="settings-section">
+            <h2 className="h6 mb-3">Store favicon</h2>
+            <div className="d-flex align-items-center gap-3 flex-wrap">
+              <div>
+                <p className="text-secondary mb-2">Current favicon</p>
+                {store.faviconPath ? (
+                  <img
+                    src={store.faviconPath}
+                    alt="Current store favicon"
+                    width={48}
+                    height={48}
+                    className="border rounded"
+                  />
+                ) : (
+                  <div className="border rounded d-flex align-items-center justify-content-center text-secondary" style={{ width: 48, height: 48 }}>
+                    None
+                  </div>
+                )}
+              </div>
+
+              <div className="flex-grow-1" style={{ maxWidth: 420 }}>
+                <label className="form-label" htmlFor="favicon">Upload favicon</label>
+                <input
+                  id="favicon"
+                  name="favicon"
+                  type="file"
+                  className="form-control"
+                  accept="image/png,image/jpeg,image/webp,image/x-icon,image/vnd.microsoft.icon"
+                  required
+                />
+                <div className="form-text">Recommended: square image, 64x64 or 128x128.</div>
+              </div>
+            </div>
+
+            <button className="btn btn-dark mt-3" type="submit" disabled={isUploadingFavicon}>
+              {isUploadingFavicon ? "Uploading..." : "Save favicon"}
+            </button>
           </form>
         </div>
 
